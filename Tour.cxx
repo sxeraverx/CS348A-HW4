@@ -19,7 +19,7 @@ Tour::Tour(string filename)
         istringstream iss(line);
         GLfloat x, y, z;
         iss >> x >> y >> z;
-        points.push_back(Point4<GLfloat>(x/1000, y/1000, z/1000/1000));
+        points.push_back(Point4<GLfloat>(x/1000.0, y/1000.0, z/1000.0));
     }
     mst = new MST(points);
     path = new Path(*mst);
@@ -37,6 +37,11 @@ void Tour::draw()
     path->draw();
 }
 
+
+void Tour::d(float d)
+{
+    path->d(d);
+}
 
 void Tour::m(float m)
 {

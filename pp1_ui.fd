@@ -62,5 +62,11 @@ Function {create_the_forms()} {open
       callback mCallback selected
       xywh {390 560 30 220}
     }
+    Fl_Value_Slider DSlider {
+      label d
+      user_data 0 user_data_type long
+      callback dCallback selected
+      xywh {420 560 30 220}
+    }
   }
 } 

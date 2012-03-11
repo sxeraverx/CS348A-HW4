@@ -47,6 +47,7 @@ MST::MST(const std::vector<Point3<GLfloat> > &points) : points(points)
 
 vector<Point3<GLfloat> > MST::orderedPoints() const
 {
+    return points;
     vector<int> pointList;
     
     int current_node = 0;
@@ -97,13 +98,18 @@ vector<Point3<GLfloat> > MST::orderedPoints() const
 void MST::draw()
 {
     glDisable(GL_LIGHTING);
-    glDisable(GL_DEPTH_TEST);
     glColor3f(1, 1, 1);
     glBegin(GL_LINES);
+    /*
     for(vector<pair<int, int> >::iterator iter = edges.begin(); iter!=edges.end(); iter++)
     {
         glVertex3fv(points[iter->first]);
         glVertex3fv(points[iter->second]);
+    }*/
+    for(vector<Point3<GLfloat> >::iterator iter = points.begin(); iter < points.end()-1; iter++)
+    {
+        glVertex3fv(*iter);
+        glVertex3fv(*(iter+1));
     }
     glEnd();
     glEnable(GL_LIGHTING);

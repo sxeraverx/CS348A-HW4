@@ -137,6 +137,8 @@ void Datafile::draw()
     glVertexPointer(4, GL_FLOAT, 0, &points[0][0]);
     glNormalPointer(GL_FLOAT, 0, &normals[0][0]);
 
+    //for(vector<Vector3<GLuint> >::iterator tri = triangles.begin(); tri != triangles.end(); tri++)
+    //glDrawElements(GL_LINE_LOOP, 3, GL_UNSIGNED_INT, *tri);
     glDrawElements(GL_TRIANGLES, triangles.size()*3, GL_UNSIGNED_INT, triangles[0]);
 
     glDisableClientState(GL_VERTEX_ARRAY);
@@ -170,4 +172,40 @@ void Datafile::draw()
     glEnd();
     glEnable(GL_LIGHTING);
     */
+}
+
+vector<Point3<GLfloat> > Datafile::triangleBelow(Point3<GLfloat> p)
+{
+    Point3<GLfloat> pp(p);
+    for(vector<Vector3<GLuint> >::iterator iter = triangles.begin(); iter < triangles.end(); iter++)
+    {
+        /*Convert into Point3*/
+        Point3<GLfloat> pa(points[(*iter)[0]]);
+        Point3<GLfloat> pb(points[(*iter)[1]]);
+        Point3<GLfloat> pc(points[(*iter)[2]]);
+        /*Project onto z=0*/
+        pa[2] = 0;
+        pb[2] = 0;
+        pc[2] = 0;
+        //compute all edges
+        Vector3<GLfloat> A = pb-pa;
+        Vector3<GLfloat> B = pc-pb;
+        Vector3<GLfloat> C = pa-pc;
+        //compute vector from each vertex
+        Vector3<GLfloat> a = pp-pa;
+        Vector3<GLfloat> b = pp-pb;
+        Vector3<GLfloat> c = pp-pc;
+
+        Vector3<GLfloat> z(0,0,1);
+        //if all vectors to point are on the same side of each vertex, the point is inside
+        if(A.cross(a)*z>=0 && B.cross(b)*z>=0 && C.cross(c)*z>=0
+           || A.cross(a)*z<=0 && B.cross(b)*z<=0 && C.cross(c)*z<=0)
+        {
+            vector<Point3<GLfloat> > pts;
+            pts.push_back(pa);
+            pts.push_back(pb);
+            pts.push_back(pc);
+            return pts;
+        }
+    }
 }

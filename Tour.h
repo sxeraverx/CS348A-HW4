@@ -21,4 +21,5 @@ public:
     ~Tour();
     void draw();
     void m(float m);
+    void d(float d);
 };

@@ -16,13 +16,19 @@
 #include "Spline.h"
 #include "Triangulator.h"
 
-#define VIEW_X_DEFAULT     10.0
-#define VIEW_Y_DEFAULT     10.0
-#define VIEW_Z_DEFAULT     10.0
+#define VIEW_X_DEFAULT     1.0
+#define VIEW_Y_DEFAULT     1.0
+#define VIEW_Z_DEFAULT     1.0
+
+#define D_MIN 0.0
+#define D_MAX 1.0
+#define D_DEFAULT 0.0
 
 #define M_MIN -10.0
 #define M_MAX 10.0
 #define M_DEFAULT 0.0
+
+using namespace std;
 
 Fl_Double_Window *ui;
 
@@ -35,10 +41,15 @@ GLUnurbsObj *theNurb;
 Triangulator *datafile;
 Tour *tour;
 
+void dCallback(Fl_Value_Slider *slider, long)
+{
+    float d = slider->value();
+    tour->d(d);
+}
+
 void mCallback(Fl_Value_Slider *slider, long)
 {
     float m = slider->value();
-    std::cout << m << std::endl;
     tour->m(m);
 }
 
@@ -82,6 +93,9 @@ void InitInterfaceDefaults(void){
 
     MSlider->bounds(M_MIN, M_MAX);
     MSlider->value(M_DEFAULT);
+    
+    DSlider->bounds(D_MIN, D_MAX);
+    DSlider->value(D_DEFAULT);
   
 	viewX      = VIEW_X_DEFAULT ;
 	viewY      = VIEW_Y_DEFAULT ;
@@ -93,6 +107,14 @@ void MyInit(void){
 	theQuadric = gluNewQuadric();
     datafile = new Triangulator("hw4.heights");
     tour = new Tour("hw4.tour");
+    for(vector<Point3<GLfloat> >::iterator iter = tour->points.begin(); iter!=tour->points.end(); iter++)
+    {
+        cout << (*iter) << endl;
+        vector<Point3<GLfloat> > vec =  datafile->triangleBelow(*iter);
+        cout << vec[0] << endl;
+        cout << vec[1] << endl;
+        cout << vec[2] << endl;
+    }
     Fl::add_timeout(1.0/60, SixtyHzCallback);
 }
 
@@ -129,9 +151,9 @@ void DefineViewPointMain(){
 void DefineViewPointSecondary(){
 	glLoadIdentity();
 	gluLookAt(
-		6.0, 10.0, 13.0,
+		0.0, 0.0, 30.0,
 		0.0, 0.0, 0.0,
-		0.0, 0.0, 1.0);
+		0.0, 1.0, 0.0);
 }
 
 // Create the axes
@@ -175,7 +197,7 @@ void DefineLight(void){
 	glEnable(GL_LIGHTING);
 	glEnable(GL_LIGHT0);
 	glEnable(GL_LIGHT1);
-    glShadeModel(GL_SMOOTH);
+    glShadeModel(GL_FLAT);
 	glDepthFunc(GL_LESS);
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_AUTO_NORMAL);
@@ -209,7 +231,7 @@ void MainCanvas::draw(){
 	  glViewport(0,0, (GLint)w(), (GLint)h());
 	  glMatrixMode( GL_PROJECTION );
 	  glLoadIdentity();
-	  gluPerspective (75.0, (GLdouble)w()/(GLdouble)h(), 0.1, 200.0);
+	  gluPerspective (75.0, (GLdouble)w()/(GLdouble)h(), 0.1, 20000.0);
 	  glMatrixMode( GL_MODELVIEW );
 	  DefineLight();
 	  DefineMaterial();
@@ -234,7 +256,7 @@ void CameraPositionCanvas::draw(){
 		glViewport(0,0, (GLint)w(), (GLint)h());
 		glMatrixMode( GL_PROJECTION );
 		glLoadIdentity();
-		gluPerspective (75.0, (GLdouble)w()/(GLdouble)h(), 0.1, 20.0);
+		gluPerspective (75.0, (GLdouble)w()/(GLdouble)h(), 0.1, 40.0);
 		glMatrixMode( GL_MODELVIEW );
 		DefineLight();
 		DefineMaterial();

@@ -23,6 +23,17 @@ Path::Path(const MST &mst)
 void Path::recalcDeBoorPoints()
 {
     deBoorPoints.clear();
+    deBoorPoints.push_back(points[0]);
+    deBoorPoints.push_back(points[0]);
+    float d = (points[1]-points[0]).magnitude()/2;
+    deBoorPoints.push_back(points[0]+(points[1]-points[0])/2+Vector3<GLfloat>(
+                               d*float(rand())/float(RAND_MAX),
+                               d*float(rand())/float(RAND_MAX),
+                               d*float(rand())/float(RAND_MAX))
+        );
+    deBoorPoints.push_back(points[1]);
+    deBoorPoints.push_back(points[1]);
+    /*
     for(int j = 0; j < points.size()+1; j++)
     {
         deBoorPoints.push_back(points[0]);
@@ -64,6 +75,44 @@ void Path::recalcDeBoorPoints()
         else
             deBoorPoints[i] += (points[1]-points[0])/(points[i]-points[i-1]).magnitude()*mm;
     }
+    */
+}
+
+void Path::drawCube(Point3<GLfloat> center, GLfloat halfsize)
+{
+    GLfloat d = halfsize;
+    glDisable(GL_LIGHTING);
+    glBegin(GL_LINE_LOOP);
+    {
+        glVertex3fv(center+Vector3<GLfloat>( d, d, d));
+        glVertex3fv(center+Vector3<GLfloat>( d,-d, d));
+        glVertex3fv(center+Vector3<GLfloat>(-d,-d, d));
+        glVertex3fv(center+Vector3<GLfloat>(-d, d, d));
+    }
+    glEnd();
+    glBegin(GL_LINE_LOOP);
+    {
+        glVertex3fv(center+Vector3<GLfloat>( d, d,-d));
+        glVertex3fv(center+Vector3<GLfloat>( d,-d,-d));
+        glVertex3fv(center+Vector3<GLfloat>(-d,-d,-d));
+        glVertex3fv(center+Vector3<GLfloat>(-d, d,-d));
+    }
+    glEnd();
+    glBegin(GL_LINES);
+    {
+        glVertex3fv(center+Vector3<GLfloat>( d, d, d));
+        glVertex3fv(center+Vector3<GLfloat>( d, d,-d));
+        
+        glVertex3fv(center+Vector3<GLfloat>( d,-d, d));
+        glVertex3fv(center+Vector3<GLfloat>( d,-d,-d));
+
+        glVertex3fv(center+Vector3<GLfloat>(-d,-d, d));
+        glVertex3fv(center+Vector3<GLfloat>(-d,-d,-d));
+
+        glVertex3fv(center+Vector3<GLfloat>(-d, d, d));
+        glVertex3fv(center+Vector3<GLfloat>(-d, d,-d));
+    }
+    glEnd();
 }
 
 void Path::draw()
@@ -84,6 +133,12 @@ void Path::draw()
     glEnd();
     glEnable(GL_LIGHTING);
 
+    for(vector<Point3<GLfloat> >::iterator iter = points.begin(); iter!=points.end(); iter++)
+    {
+        drawCube(*iter, dd);
+    }
+
+    
     glDisable(GL_LIGHTING);
     
     vector<GLfloat> knots;
@@ -101,7 +156,14 @@ void Path::draw()
     gluNurbsCurve(theNurb, knots.size(), &knots[0], sizeof(Point3<GLfloat>)/sizeof(GLfloat), &deBoorPoints[0][0], 3, GL_MAP1_VERTEX_3);
     gluEndCurve(theNurb);
 
+    glEnable(GL_DEPTH_TEST);
     glEnable(GL_LIGHTING);
+    
+}
+
+void Path::d(float d)
+{
+    dd = d;
 }
 
 void Path::m(float m)

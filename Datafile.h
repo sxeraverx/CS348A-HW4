@@ -23,6 +23,8 @@ public:
 
     void draw();
 
+    std::vector<Point3<GLfloat> > triangleBelow(Point3<GLfloat> p);
+
 protected:
     void rebuildTriangles();
     void recalculateNormals();
