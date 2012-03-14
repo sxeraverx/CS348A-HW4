@@ -1,7 +1,6 @@
 #include "Tour.h"
 
 #include "Datafile.h"
-#include "MST.h"
 #include "Path.h"
 
 #include <fstream>
@@ -24,19 +23,16 @@ Tour::Tour(string filename, Datafile *mesh)
             break;
         points.push_back(Point4<GLfloat>(x/10.0, y/10.0, z/10.0));
     }
-    mst = new MST(points);
-    path = new Path(*mst, mesh);
+    path = new Path(points, mesh);
 }
 
 Tour::~Tour()
 {
     delete path;
-    delete mst;
 }
 
 void Tour::draw()
 {
-    mst->draw();
     path->draw();
 }
 

@@ -29,9 +29,9 @@ Function {create_the_forms()} {open
 } {
   Fl_Window assgn1_ui {
     label assgn1_ui open
-    xywh {367 209 870 800} type Double box NO_BOX visible
+    xywh {395 238 870 800} type Double box NO_BOX visible
   } {
-    Fl_Box {} {user_data_type long selected
+    Fl_Box {} {user_data_type long
       xywh {0 0 870 800} box UP_BOX labelcolor 56
     }
     Fl_Button ExitButton {
@@ -64,8 +64,8 @@ Function {create_the_forms()} {open
     }
     Fl_Button {} {
       label Pause
-      callback PauseProgram
-      xywh {770 740 80 25} box SHADOW_BOX labelfont 1
+      callback PauseProgram selected
+      xywh {770 745 80 20} box SHADOW_BOX labelfont 1
     }
     Fl_Browser POIbrowser {
       xywh {5 530 435 260} type Select
@@ -73,19 +73,19 @@ Function {create_the_forms()} {open
     Fl_Button {} {
       label Add
       callback AddPoint
-      xywh {770 715 75 20} box SHADOW_BOX labelfont 1
+      xywh {770 670 80 20} box SHADOW_BOX labelfont 1
     }
     Fl_Input XInput {
       label X
-      xywh {490 706 65 24}
+      xywh {490 666 65 24}
     }
     Fl_Input ZInput {
       label Z
-      xywh {665 706 65 24}
+      xywh {665 666 65 24}
     }
     Fl_Input YInput {
       label Y
-      xywh {575 706 65 24}
+      xywh {575 666 65 24}
     }
     Fl_Value_Output lengthValue {
       label {Length:}
@@ -102,6 +102,21 @@ Function {create_the_forms()} {open
     Fl_Value_Output safetyValue {
       label {Ground Distance:}
       xywh {605 606 55 24}
+    }
+    Fl_Button {} {
+      label Delete
+      callback DeletePoint
+      xywh {770 695 80 20} box SHADOW_BOX labelfont 1
+    }
+    Fl_Button {} {
+      label Restart
+      callback RestartAnimation
+      xywh {770 720 80 20} box SHADOW_BOX labelfont 1
+    }
+    Fl_Button {} {
+      label Reorder
+      callback Reorder
+      xywh {770 645 80 20} box SHADOW_BOX labelfont 1
     }
   }
 } 

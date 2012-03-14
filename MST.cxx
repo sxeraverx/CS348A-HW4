@@ -47,7 +47,6 @@ MST::MST(const std::vector<Point3<GLfloat> > &points) : points(points)
 
 vector<Point3<GLfloat> > MST::orderedPoints() const
 {
-    return points;
     vector<int> pointList;
     
     int current_node = 0;

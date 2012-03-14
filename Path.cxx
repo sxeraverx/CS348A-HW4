@@ -17,14 +17,13 @@ static void nurbsError(GLenum errorCode)
     exit(0);
 }
 
-Path::Path(const MST &mst, const Datafile *mesh)
-    : points(mst.orderedPoints()),
+Path::Path(const vector<Point3<GLfloat> > &points, const Datafile *mesh)
+    : points(points),
       mesh(mesh)
 {
     for(int i = 0; i < points.size(); i++)
     {
         std::vector<Point3<GLfloat> > tri = mesh->triangleBelow(points[i]);
-        cout << "n" << tri[0] << endl;
         Vector3<GLfloat> norm = (tri[1]-tri[0]).cross(tri[2]-tri[0]);
         if(norm[2]<0) norm*=-1;
         normalsBelow.push_back(norm.normalized());
@@ -127,14 +126,12 @@ vector<QuadraticSegment> Path::generatePOIQuadSegs()
             if(mesh->distance(qs.poi) < 0 || intersected>20)
                 break;
             intersected++;
-            cerr << "Intersects terrain" << endl;
             Vector3<GLfloat> v = qs.cp[2]-qs.cp[0];
             qs.cp[0]+=v/20;
             qs.cp[2]-=v/20;
         }
         if(intersected)
         {
-            cerr << "ok" << endl;
             qs.color = Vector3<GLfloat>(1,0,1);
         }
         quadsegs.push_back(qs);
@@ -183,13 +180,11 @@ vector<QuadraticSegment> Path::mergeQuadSegs(vector<QuadraticSegment> quadsegs)
         if((qs->cp[1]-qs->cp[2]).magnitude() > (qs->cp[1]-pp1).magnitude()
             || (pp1-qs->cp[1]).magnitude() < (pp1-qs->cp[2]).magnitude())
         {
-            cerr << "cusp detected" << endl;
             cd++;
         }
         if(((qs+1)->cp[1]-(qs+1)->cp[0]).magnitude() > ((qs+1)->cp[1]-pp2).magnitude()
             || (pp2-(qs+1)->cp[1]).magnitude() < (pp2-(qs+1)->cp[0]).magnitude())
         {
-            cerr << "cusp detected" << endl;
             cd++;
         }
 
@@ -238,17 +233,9 @@ vector<QuadraticSegment> Path::mergeQuadSegs(vector<QuadraticSegment> quadsegs)
                 ;
             if(pt==points.end())
             {
-                cerr << qs->cp[1] << endl;
                 for(pt = points.begin(); !((*pt)==qs->poi) && pt!=points.end(); pt++)
-                    cerr << *pt << endl;
                 exit(0);
             }
-
-            //cerr << "pushing back " << mp << " between " << *(pt-1) << " and " << *pt << endl;
-            //int i = pt-points.begin();
-            //points.insert(pt, mp);
-            //normalsBelow.insert(normalsBelow.begin()+i, Vector3<GLfloat>(0,0,-1));
-            //return newQuadSegs;
             ap = true;
             
         }
@@ -262,10 +249,6 @@ vector<QuadraticSegment> Path::mergeQuadSegs(vector<QuadraticSegment> quadsegs)
         newQuadSegs.push_back(*qs);
         newQuadSegs.push_back(qs1);
         newQuadSegs.push_back(qs2);
-        if(intersectsTerrain(qs1))
-            cerr << "Intersects terrain" << endl;
-        if(intersectsTerrain(qs2))
-            cerr << "Intersects terrain" << endl;
     }
     newQuadSegs.push_back(quadsegs.back());
 
@@ -320,9 +303,6 @@ void Path::draw()
     {
         quadsegs = generatePOIQuadSegs();
         quadsegs = mergeQuadSegs(quadsegs);
-
-        cout << "Length: " << length() << "\t\tCurvature: " << curvature() << endl;
-        cout << "Min distance: " << distance() << endl;
     }
     for(vector<QuadraticSegment>::iterator qs = quadsegs.begin(); qs!=quadsegs.end(); qs++)
     {
@@ -382,8 +362,6 @@ void Path::d(float d)
         quadsegs[i].cp[1]+=Vector3<GLfloat>(0,0,deltaD);
         quadsegs[i].cp[2]+=Vector3<GLfloat>(0,0,deltaD);
     }
-    
-    cout << "Min distance: " << distance() << endl;
 }
 
 GLfloat Path::curvature() const

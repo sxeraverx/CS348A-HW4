@@ -26,7 +26,7 @@ Datafile::Datafile(string path)
         if(test=="site") {
             GLfloat x, y, z;
             iss >> x >> y >> z;
-            points.push_back(Point4<GLfloat>(x/1.0, y/10.0, z/10.0));
+            points.push_back(Point4<GLfloat>(x/10.0, y/10.0, z/10.0));
         }
         else if(test=="edge")
         {
@@ -163,15 +163,15 @@ void Datafile::draw()
         //if( )
         if(points[tri->vec[0]][2]<=0 && points[tri->vec[1]][2]<=0 && points[tri->vec[2]][2]<=0 && normals[tri->vec[0]].normalized()*z>.95)
             glColor3f(0,0,1);
-        if(points[tri->vec[0]][2]>90)
+        if(points[tri->vec[0]][2]>60)
             glColor3f(1,1,1);
         glNormal3fv(normals[tri->vec[0]].vec);
         glVertex4fv(points[tri->vec[0]].vec);
-        if(points[tri->vec[1]][2]>90)
+        if(points[tri->vec[1]][2]>60)
             glColor3f(1,1,1);
         glNormal3fv(normals[tri->vec[1]].vec);
         glVertex4fv(points[tri->vec[1]].vec);
-        if(points[tri->vec[2]][2]>90)
+        if(points[tri->vec[2]][2]>60)
             glColor3f(1,1,1);
         glNormal3fv(normals[tri->vec[2]].vec);
         glVertex4fv(points[tri->vec[2]].vec);

@@ -7,7 +7,6 @@
 #include "QuadraticSegment.h"
 
 class Datafile;
-class MST;
 class QuadraticSegment;
 
 class Path
@@ -18,10 +17,11 @@ class Path
     GLUnurbsObj *theNurb;
     float dd;
     const Datafile *mesh;
+public:
     std::vector<QuadraticSegment> quadsegs;
 public:
     std::vector<Point3<GLfloat> > points;
-    Path(const MST &mst, const Datafile *mesh);
+    Path(const std::vector<Point3<GLfloat> > &points, const Datafile *mesh);
     void draw();
     void d(float d);
     GLfloat curvature() const;
@@ -30,9 +30,9 @@ public:
     Point3<GLfloat> evaluate(GLfloat time) const;
     int duration() const;
     GLfloat distance() const;
+    void recalcDeBoorPoints();
 private:
     void drawCube(Point3<GLfloat> center, GLfloat halfsize);
-    void recalcDeBoorPoints();
     std::vector<QuadraticSegment> generatePOIQuadSegs();
     std::vector<QuadraticSegment> mergeQuadSegs(std::vector<QuadraticSegment> quadsegs);
     void updateTrianglesBelow();

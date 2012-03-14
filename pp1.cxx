@@ -16,6 +16,7 @@
 
 #include "Datafile.h"
 #include "Matrix.h"
+#include "MST.h"
 #include "Path.h"
 #include "Tour.h"
 #include "Spline.h"
@@ -42,6 +43,8 @@ GLUnurbsObj *theNurb;
 //Datafile *datafile;
 Triangulator *datafile;
 Tour *tour;
+
+GLfloat cur_time;
 
 void dCallback(Fl_Value_Slider *slider, long)
 {
@@ -70,14 +73,73 @@ void DrawScene(){
 
 bool paused = true;
 
+void Reorder(Fl_Button*, void *)
+{
+    cur_time = 0;
+    paused = true;
+    tour->path->points = MST(tour->path->points).orderedPoints();
+    tour->path->recalcDeBoorPoints();
+    POIbrowser->clear();
+    for(vector<Point3<GLfloat> >::iterator iter = tour->path->points.begin(); iter!=tour->path->points.end(); iter++)
+    {
+        stringstream ss;
+        ss << *iter;
+        POIbrowser->add(ss.str().c_str(), 0);
+    }
+    POIbrowser->select(1);
+    canvas->flush();
+    canvas2->flush();
+}
+
+void RestartAnimation(Fl_Button*, void *)
+{
+    cur_time = 0;
+    paused = true;
+    canvas->flush();
+    canvas2->flush();
+}
+
 void PauseProgram(Fl_Button*, void *)
 {
-    cout << "p" << endl;
     paused = !paused;
+    canvas->flush();
+    canvas2->flush();
+    
 }
 
 void AddPoint(Fl_Button*, void*)
 {
+    if(!paused)
+        return;
+    stringstream ssx, ssy, ssz;
+    GLfloat x, y, z;
+    ssx << XInput->value();
+    ssy << YInput->value();
+    ssz << ZInput->value();
+    ssx >> x;
+    ssy >> y;
+    ssz >> z;
+    Point3<GLfloat> point(x,y,z);
+    stringstream ssp;
+    ssp << point;
+    POIbrowser->insert(POIbrowser->value()+1, ssp.str().c_str());
+    tour->path->points.insert(tour->path->points.begin()+POIbrowser->value(), point);
+    tour->path->recalcDeBoorPoints();
+    canvas->flush();
+    canvas2->flush();
+}
+
+void DeletePoint(Fl_Button*, void*)
+{
+    if(!paused)
+        return;
+    int v = POIbrowser->value();
+    POIbrowser->remove(v);
+    POIbrowser->value(v);
+    tour->path->points.erase(tour->path->points.begin()+POIbrowser->value()-1);
+    tour->path->recalcDeBoorPoints();
+    canvas->flush();
+    canvas2->flush();
 }
 
 void SixtyHzCallback(void *)
@@ -85,17 +147,15 @@ void SixtyHzCallback(void *)
     Fl::repeat_timeout(1.0/60, SixtyHzCallback);
     if(paused)
         return;
-    static GLfloat t;
-    if(t>tour->length())
+    if(cur_time>tour->length())
     {
-        t = 0;
         paused = true;
     }
-    t+=.01;
-    POIbrowser->select(int(t+.5)/3+1);
+    cur_time+=.01;
+    POIbrowser->select(int(cur_time+.5)/3+1);
 
-    Point3<GLfloat> location = tour->evaluate(t);
-    Point3<GLfloat> lookAt = tour->evaluate(t+.5);
+    Point3<GLfloat> location = tour->evaluate(cur_time);
+    Point3<GLfloat> lookAt = tour->evaluate(cur_time+.5);
     viewX = location[0];
     viewY = location[1];
     viewZ = location[2];
@@ -135,6 +195,15 @@ void MyInit(void){
         POIbrowser->add(ss.str().c_str(), 0);
     }
     POIbrowser->select(1);
+
+    cout << "-----" << endl;
+    cout << tour->path->quadsegs[0].cp[0] << endl;
+    for(vector<QuadraticSegment>::iterator iter = tour->path->quadsegs.begin(); iter!=tour->path->quadsegs.end(); iter++)
+    {
+        cout << iter->cp[1] << endl;
+    }
+    cout << tour->path->quadsegs.back().cp[2] << endl;
+    cout << "-----" << endl;
 
     segmentsValue->value(tour->path->duration());
     lengthValue->value(tour->path->length());
@@ -283,7 +352,7 @@ void CameraPositionCanvas::draw(){
 		glViewport(0,0, (GLint)w(), (GLint)h());
 		glMatrixMode( GL_PROJECTION );
 		glLoadIdentity();
-		gluPerspective (75.0, (GLdouble)w()/(GLdouble)h(), 0.1, 40000.0);
+		gluPerspective (75.0, (GLdouble)w()/(GLdouble)h(), 0.1, 4000000.0);
 		glMatrixMode( GL_MODELVIEW );
 		DefineLight();
 		DefineMaterial();
