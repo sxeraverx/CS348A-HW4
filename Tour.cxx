@@ -20,7 +20,9 @@ Tour::Tour(string filename, Datafile *mesh)
         istringstream iss(line);
         GLfloat x, y, z;
         iss >> x >> y >> z;
-        points.push_back(Point4<GLfloat>(x/1000.0, y/1000.0, z/1000.0));
+        if(file.eof())
+            break;
+        points.push_back(Point4<GLfloat>(x/10.0, y/10.0, z/10.0));
     }
     mst = new MST(points);
     path = new Path(*mst, mesh);
@@ -44,7 +46,12 @@ void Tour::d(float d)
     path->d(d);
 }
 
-void Tour::m(float m)
+int Tour::length() const
 {
-    path->m(m);
+    return path->length();
+}
+
+Point3<GLfloat> Tour::evaluate(GLfloat t) const
+{
+    return path->evaluate(t);
 }

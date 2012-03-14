@@ -58,6 +58,8 @@ struct Vector3
     T magnitude();
 
     Vector3<T> &normalize() {
+        if(magnitude()==0)
+            return (*this);
         return (*this)/=magnitude();
     }
 
@@ -72,7 +74,7 @@ template <>
 inline
 float Vector3<float>::magnitude()
 {
-    return sqrt(vec[0]*vec[0]+vec[1]*vec[1]+vec[2]*vec[2]);
+    return std::sqrt(vec[0]*vec[0]+vec[1]*vec[1]+vec[2]*vec[2]);
 }
 
 

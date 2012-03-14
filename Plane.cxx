@@ -75,3 +75,8 @@ Point3<GLfloat> Plane::project(const Point3<GLfloat> &otherp) const
 {
     return otherp-n*signedDistance(otherp);
 }
+
+Point3<GLfloat> Line::project(const Point3<GLfloat> &otherp) const
+{
+    return p+(otherp-p)*(d.normalized()*d.normalized());
+}

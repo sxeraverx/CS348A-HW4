@@ -20,6 +20,7 @@ public:
     Tour(std::string filename, Datafile *mesh);
     ~Tour();
     void draw();
-    void m(float m);
     void d(float d);
+    int length() const;
+    Point3<GLfloat> evaluate(GLfloat t) const;
 };

@@ -25,6 +25,7 @@ public:
     void draw();
     void drawTrianglesBelow(std::vector<Point3<GLfloat> > ps);
 
+    GLfloat distance(Point3<GLfloat> p) const;
     std::vector<Point3<GLfloat> > triangleBelow(Point3<GLfloat> p, bool alreadyTried = false) const;
 
 protected:

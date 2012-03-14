@@ -8,11 +8,15 @@
 #include "pp1.h"
 #include "pp1_ui.h"
 #include <math.h>
+#include <sstream>
 #include <stdlib.h>
 #include <stdio.h>
 
+#include <FL/Fl_Widget.H>
+
 #include "Datafile.h"
 #include "Matrix.h"
+#include "Path.h"
 #include "Tour.h"
 #include "Spline.h"
 #include "Triangulator.h"
@@ -22,12 +26,8 @@
 #define VIEW_Z_DEFAULT     1.0
 
 #define D_MIN 0.0
-#define D_MAX 1.0
+#define D_MAX 100.0
 #define D_DEFAULT 0.0
-
-#define M_MIN -10.0
-#define M_MAX 10.0
-#define M_DEFAULT 0.0
 
 using namespace std;
 
@@ -47,12 +47,7 @@ void dCallback(Fl_Value_Slider *slider, long)
 {
     float d = slider->value();
     tour->d(d);
-}
-
-void mCallback(Fl_Value_Slider *slider, long)
-{
-    float m = slider->value();
-    tour->m(m);
+    safetyValue->value(tour->path->distance());
 }
 
 
@@ -61,46 +56,55 @@ void DefineMaterial();
 void DefineViewPointMain();
 
 void DrawScene(){
+    glPointSize(5);
+    glBegin(GL_POINTS);
+    glColor3f(1,1,1);
+    glVertex3f(centerX, centerY, centerZ);
+    glEnd();
+    glPointSize(0);
     DefineLight();
     DefineMaterial();
     datafile->draw();
     tour->draw();
 }
 
-bool paused = false;
+bool paused = true;
 
 void PauseProgram(Fl_Button*, void *)
 {
+    cout << "p" << endl;
     paused = !paused;
+}
+
+void AddPoint(Fl_Button*, void*)
+{
 }
 
 void SixtyHzCallback(void *)
 {
+    Fl::repeat_timeout(1.0/60, SixtyHzCallback);
     if(paused)
         return;
-    static int i = 0;
-    i++;
-    if(i%60==0)
+    static GLfloat t;
+    if(t>tour->length())
     {
-        Point3<GLfloat> center = tour->points[(i/60)%tour->points.size()];
-        centerX = center[0];
-        centerY = center[1];
-        centerZ = center[2];
-        }
-    Fl::repeat_timeout(1.0/60, SixtyHzCallback);
-    double r = sqrt(pow(viewX, 2) + pow(viewY, 2) + pow(viewZ, 2));
-    double theta = acos(viewZ/r);
-    double phi = atan(viewY/viewX);
-    if(phi<0 && viewY > 0)
-        phi += M_PI;
-    if(phi>0 && viewY < 0)
-        phi -= M_PI;
-    phi += M_PI / 240;
-    //theta += (phi>0?M_PI:-M_PI)/400;
-    viewX = r * cos(phi) * sin(theta);
-    viewY = r * sin(phi) * sin(theta);
-    viewZ = r * cos(theta);
+        t = 0;
+        paused = true;
+    }
+    t+=.01;
+    POIbrowser->select(int(t+.5)/3+1);
+
+    Point3<GLfloat> location = tour->evaluate(t);
+    Point3<GLfloat> lookAt = tour->evaluate(t+.5);
+    viewX = location[0];
+    viewY = location[1];
+    viewZ = location[2];
+    centerX = lookAt[0];
+    centerY = lookAt[1];
+    centerZ = lookAt[2];
+    
     canvas->flush();
+    canvas2->flush();
 }
 
 // Callback for the button that controls the exit of the program
@@ -110,9 +114,6 @@ void QuitProgram(Fl_Button *ob, long data){
 
 // Define the default values of the interface
 void InitInterfaceDefaults(void){
-
-    MSlider->bounds(M_MIN, M_MAX);
-    MSlider->value(M_DEFAULT);
     
     DSlider->bounds(D_MIN, D_MAX);
     DSlider->value(D_DEFAULT);
@@ -127,14 +128,19 @@ void MyInit(void){
 	theQuadric = gluNewQuadric();
     datafile = new Triangulator("hw4.heights");
     tour = new Tour("hw4.tour", datafile);
-    for(vector<Point3<GLfloat> >::iterator iter = tour->points.begin(); iter!=tour->points.end(); iter++)
+    for(vector<Point3<GLfloat> >::iterator iter = tour->path->points.begin(); iter!=tour->path->points.end(); iter++)
     {
-        cout << (*iter) << endl;
-        vector<Point3<GLfloat> > vec =  datafile->triangleBelow(*iter);
-        cout << vec[0] << endl;
-        cout << vec[1] << endl;
-        cout << vec[2] << endl;
+        stringstream ss;
+        ss << *iter;
+        POIbrowser->add(ss.str().c_str(), 0);
     }
+    POIbrowser->select(1);
+
+    segmentsValue->value(tour->path->duration());
+    lengthValue->value(tour->path->length());
+    curvatureValue->value(tour->path->curvature());
+    safetyValue->value(tour->path->distance());
+    
     Fl::add_timeout(1.0/60, SixtyHzCallback);
 }
 
@@ -163,7 +169,7 @@ int main(int argc, char *argv[]){
 void DefineViewPointMain(){
 	glLoadIdentity();
     gluLookAt(
-        centerX+viewX, centerY+viewY, centerZ+viewZ,
+        viewX, viewY, viewZ,
         centerX, centerY, centerZ,
         0.0, 0.0, 1.0);
 }
@@ -172,7 +178,7 @@ void DefineViewPointMain(){
 void DefineViewPointSecondary(){
 	glLoadIdentity();
 	gluLookAt(
-		0.0, 0.0, 30.0,
+		0.0, 0.0, 3000.0,
 		0.0, 0.0, 0.0,
 		0.0, 1.0, 0.0);
 }
@@ -218,7 +224,7 @@ void DefineLight(void){
 	glEnable(GL_LIGHTING);
 	glEnable(GL_LIGHT0);
 	glEnable(GL_LIGHT1);
-    glShadeModel(GL_FLAT);
+    //glShadeModel(GL_FLAT);
 	glDepthFunc(GL_LESS);
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_AUTO_NORMAL);
@@ -252,7 +258,7 @@ void MainCanvas::draw(){
 	  glViewport(0,0, (GLint)w(), (GLint)h());
 	  glMatrixMode( GL_PROJECTION );
 	  glLoadIdentity();
-	  gluPerspective (75.0, (GLdouble)w()/(GLdouble)h(), 0.1, 20000.0);
+	  gluPerspective (75.0, (GLdouble)w()/(GLdouble)h(), 0.1, 200000.0);
 	  glMatrixMode( GL_MODELVIEW );
 	  DefineLight();
 	  DefineMaterial();
@@ -277,7 +283,7 @@ void CameraPositionCanvas::draw(){
 		glViewport(0,0, (GLint)w(), (GLint)h());
 		glMatrixMode( GL_PROJECTION );
 		glLoadIdentity();
-		gluPerspective (75.0, (GLdouble)w()/(GLdouble)h(), 0.1, 40.0);
+		gluPerspective (75.0, (GLdouble)w()/(GLdouble)h(), 0.1, 40000.0);
 		glMatrixMode( GL_MODELVIEW );
 		DefineLight();
 		DefineMaterial();

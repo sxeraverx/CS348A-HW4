@@ -26,7 +26,7 @@ Datafile::Datafile(string path)
         if(test=="site") {
             GLfloat x, y, z;
             iss >> x >> y >> z;
-            points.push_back(Point4<GLfloat>(x/1000, y/1000, z/1000/1000));
+            points.push_back(Point4<GLfloat>(x/1.0, y/10.0, z/10.0));
         }
         else if(test=="edge")
         {
@@ -147,18 +147,41 @@ void Datafile::drawTrianglesBelow(vector<Point3<GLfloat> > ps)
 
 void Datafile::draw()
 {
-    glEnableClientState(GL_VERTEX_ARRAY);
-    glEnableClientState(GL_NORMAL_ARRAY);
+    //glEnableClientState(GL_VERTEX_ARRAY);
+    //glEnableClientState(GL_NORMAL_ARRAY);
+    glEnable(GL_COLOR_MATERIAL);
 
-    glVertexPointer(4, GL_FLOAT, 0, &points[0][0]);
-    glNormalPointer(GL_FLOAT, 0, &normals[0][0]);
+    //glVertexPointer(4, GL_FLOAT, 0, &points[0][0]);
+    //glNormalPointer(GL_FLOAT, 0, &normals[0][0]);
 
-    //for(vector<Vector3<GLuint> >::iterator tri = triangles.begin(); tri != triangles.end(); tri++)
-    //glDrawElements(GL_LINE_LOOP, 3, GL_UNSIGNED_INT, *tri);
-    glDrawElements(GL_TRIANGLES, triangles.size()*3, GL_UNSIGNED_INT, triangles[0]);
+    glColor3f(0,0,1);
+    glBegin(GL_TRIANGLES);
+    Vector3<GLfloat> z(0,0,1);
+    for(vector<Vector3<GLuint> >::iterator tri = triangles.begin(); tri != triangles.end(); tri++)
+    {
+        glColor3f(.55,.27,.08);
+        //if( )
+        if(points[tri->vec[0]][2]<=0 && points[tri->vec[1]][2]<=0 && points[tri->vec[2]][2]<=0 && normals[tri->vec[0]].normalized()*z>.95)
+            glColor3f(0,0,1);
+        if(points[tri->vec[0]][2]>90)
+            glColor3f(1,1,1);
+        glNormal3fv(normals[tri->vec[0]].vec);
+        glVertex4fv(points[tri->vec[0]].vec);
+        if(points[tri->vec[1]][2]>90)
+            glColor3f(1,1,1);
+        glNormal3fv(normals[tri->vec[1]].vec);
+        glVertex4fv(points[tri->vec[1]].vec);
+        if(points[tri->vec[2]][2]>90)
+            glColor3f(1,1,1);
+        glNormal3fv(normals[tri->vec[2]].vec);
+        glVertex4fv(points[tri->vec[2]].vec);
+    }
+    glEnd();
+    //glDrawElements(GL_TRIANGLES, triangles.size()*3, GL_UNSIGNED_INT, triangles[0]);
 
-    glDisableClientState(GL_VERTEX_ARRAY);
-    glDisableClientState(GL_NORMAL_ARRAY);
+    glDisable(GL_COLOR_MATERIAL);
+    //glDisableClientState(GL_VERTEX_ARRAY);
+    //glDisableClientState(GL_NORMAL_ARRAY);
     
     /*
     glPointSize(5);
@@ -190,6 +213,39 @@ void Datafile::draw()
     */
 }
 
+GLfloat Datafile::distance(Point3<GLfloat> p) const
+{
+    Point3<GLfloat> pp(p);
+    vector<Point3<GLfloat> > tri = triangleBelow(p);
+    /*Convert into Point3*/
+    Point3<GLfloat> pa(tri[0]);
+    Point3<GLfloat> pb(tri[1]);
+    Point3<GLfloat> pc(tri[2]);
+    /*Project onto z=0*/
+    pa[2] = 0;
+    pb[2] = 0;
+    pc[2] = 0;
+    pp[2] = 0;
+    //compute all edges
+    Vector3<GLfloat> B = pb-pa;
+    Vector3<GLfloat> C = pc-pa;
+    //compute vector from each vertex
+    Vector3<GLfloat> a = pp-pa;
+    
+    GLfloat dotCC = C*C;
+    GLfloat dotCB = C*B;
+    GLfloat dotCP = C*a;
+    GLfloat dotBB = B*B;
+    GLfloat dotBP = B*a;
+    
+    GLfloat den = (dotCC*dotBB-dotCB*dotCB);
+    GLfloat u = (dotBB*dotCP-dotCB*dotBP) / den;
+    GLfloat v = (dotCC*dotBP-dotCB*dotCP) / den;
+    GLfloat dist =  p[2] - ((1-u-v)*tri[0][2] + u*tri[1][2] + v*tri[2][2]);
+    
+    return dist;
+}
+
 vector<Point3<GLfloat> > Datafile::triangleBelow(Point3<GLfloat> p, bool alreadyTried) const
 {
     Point3<GLfloat> pp(p);
@@ -219,8 +275,6 @@ vector<Point3<GLfloat> > Datafile::triangleBelow(Point3<GLfloat> p, bool already
         GLfloat den = (dotCC*dotBB-dotCB*dotCB);
         GLfloat u = (dotBB*dotCP-dotCB*dotBP);
         GLfloat v = (dotCC*dotBP-dotCB*dotCP);
-        //cout << dotCC << " " << dotCB << " " << dotCP << " " << dotBB << " " << dotBP << endl;
-        //cout << u << " " << v << " " << u+v << " " << den << endl;
 
         if (u>=0 && v>=0 && u+v<=den)
         {
@@ -235,7 +289,6 @@ vector<Point3<GLfloat> > Datafile::triangleBelow(Point3<GLfloat> p, bool already
                 assert(triangleIndices==*(triangles.begin()+idx));
                 triangles.erase(triangles.begin()+idx);
                 triangles.push_back(triangleIndices);
-                return triangleBelow(p, false);
             }
             return pts;
         }
@@ -243,6 +296,5 @@ vector<Point3<GLfloat> > Datafile::triangleBelow(Point3<GLfloat> p, bool already
     if(!alreadyTried)
         return triangleBelow(p+Vector3<GLfloat>(1.0e-7,1.0e-7,0), true);
     vector<Point3<GLfloat> > tri;
-    //cout << p << endl;
     throw("No triangle found");
 }

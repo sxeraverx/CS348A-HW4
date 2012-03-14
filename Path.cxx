@@ -5,6 +5,7 @@
 #include "QuadraticSegment.h"
 
 #include <cassert>
+#include <limits>
 
 #include <gl/glut.h>
 
@@ -18,27 +19,31 @@ static void nurbsError(GLenum errorCode)
 
 Path::Path(const MST &mst, const Datafile *mesh)
     : points(mst.orderedPoints()),
-      mm(0),
       mesh(mesh)
 {
     for(int i = 0; i < points.size(); i++)
     {
         std::vector<Point3<GLfloat> > tri = mesh->triangleBelow(points[i]);
+        cout << "n" << tri[0] << endl;
         Vector3<GLfloat> norm = (tri[1]-tri[0]).cross(tri[2]-tri[0]);
         if(norm[2]<0) norm*=-1;
         normalsBelow.push_back(norm.normalized());
     }
-    recalcDeBoorPoints();
     
     theNurb = gluNewNurbsRenderer();
     gluNurbsProperty(theNurb, GLU_SAMPLING_TOLERANCE, 25.0);
     gluNurbsProperty(theNurb, GLU_DISPLAY_MODE, GLU_FILL);
     gluNurbsCallback(theNurb, GLU_ERROR, (GLvoid (*)()) nurbsError);
+    recalcDeBoorPoints();
 
 }
 
 void Path::recalcDeBoorPoints()
 {
+
+    quadsegs = generatePOIQuadSegs();
+    quadsegs = mergeQuadSegs(quadsegs);
+    /*
     deBoorPoints.clear();
     deBoorPoints.push_back(points[0]);
     deBoorPoints.push_back(points[0]);
@@ -50,6 +55,7 @@ void Path::recalcDeBoorPoints()
         );
     deBoorPoints.push_back(points[1]);
     deBoorPoints.push_back(points[1]);
+    */
 }
 
 void Path::drawCube(Point3<GLfloat> center, GLfloat halfsize)
@@ -114,14 +120,17 @@ vector<QuadraticSegment> Path::generatePOIQuadSegs()
         p2.n = normalsBelow[i];
         
         QuadraticSegment qs(p1, p2, points[i], points[i-1], points[i+1]);
-        bool intersected = false;
+        int intersected = 0;
+        
         while(intersectsTerrain(qs))
         {
-            intersected = true;
+            if(mesh->distance(qs.poi) < 0 || intersected>20)
+                break;
+            intersected++;
             cerr << "Intersects terrain" << endl;
             Vector3<GLfloat> v = qs.cp[2]-qs.cp[0];
-            qs.cp[0]+=v/4;
-            qs.cp[2]-=v/4;
+            qs.cp[0]+=v/20;
+            qs.cp[2]-=v/20;
         }
         if(intersected)
         {
@@ -139,28 +148,19 @@ bool Path::intersectsTerrain(QuadraticSegment qs)
     for(int i = 0; i <=100; i++)
     {
         GLfloat t = i/100.0;
-        Point3<GLfloat> o(0,0,0);
         
-        Point3<GLfloat> p = o
-            + (1-t)*(1-t)*(qs.cp[0]-o)
-            + (1-t)*t*(qs.cp[1]-o)
-            + t*t*(qs.cp[2]-o);
-        try
-        {
-            vector<Point3<GLfloat> > triangle = mesh->triangleBelow(p);
-            Vector3<GLfloat> n = (triangle[1]-triangle[0]).cross(triangle[2]-triangle[0]);
-            if(n[2]<0) n*=-1;
-            n.normalize();
-            if(n*(p-triangle[0]) < 0)
+        Point3<GLfloat> pt = qs.evaluate(t);
+        try {
+            if(mesh->distance(pt) < 0)
                 intersectsTerrain = true;
-        } catch(const char *s) {}
+        }catch(const char *s) {}
     }
     return intersectsTerrain;
 }
 
 vector<QuadraticSegment> Path::mergeQuadSegs(vector<QuadraticSegment> quadsegs)
 {
-    vector<QuadraticSegment> newQuadSegs(quadsegs);
+    vector<QuadraticSegment> newQuadSegs;
     static bool addedPoints = false;
     bool ap = false;
     
@@ -178,32 +178,54 @@ vector<QuadraticSegment> Path::mergeQuadSegs(vector<QuadraticSegment> quadsegs)
 
         Point3<GLfloat> pp1 = l.intersect(thisForward);
         Point3<GLfloat> pp2 = l.intersect(nextBackward);
-        glColor3f(0,0,1);
-        glBegin(GL_POINTS);
-        glVertex3fv(pp1.vec);
-        glVertex3fv(pp2.vec);
-        glEnd();
 
         int cd = 0;
         if((qs->cp[1]-qs->cp[2]).magnitude() > (qs->cp[1]-pp1).magnitude()
             || (pp1-qs->cp[1]).magnitude() < (pp1-qs->cp[2]).magnitude())
         {
-            glBegin(GL_POINTS);
-            glColor3f(1,1,1);
-            glVertex3fv(qs->cp[2].vec);
-            glEnd();
             cerr << "cusp detected" << endl;
             cd++;
         }
         if(((qs+1)->cp[1]-(qs+1)->cp[0]).magnitude() > ((qs+1)->cp[1]-pp2).magnitude()
             || (pp2-(qs+1)->cp[1]).magnitude() < (pp2-(qs+1)->cp[0]).magnitude())
         {
-            glBegin(GL_POINTS);
-            glColor3f(1,1,1);
-            glVertex3fv((qs+1)->cp[0].vec);
-            glEnd();
             cerr << "cusp detected" << endl;
             cd++;
+        }
+
+        if(cd)
+        {
+            /*
+            qs->cp[0] -= qs->p1.n.normalized()*qs->p1.distance(qs->cp[0])*2;
+            qs->cp[2] -= qs->p1.n.normalized()*qs->p1.distance(qs->cp[2])*2;
+            {
+                Vector3<GLfloat> v = (qs->cp[2]-qs->cp[0])/2;
+                Point3<GLfloat> mp = qs->cp[0]+v;
+                Vector3<GLfloat> v2 = mp-qs->poi;
+                qs->cp[1] = qs->poi-v2/2;
+                mp = qs->poi+v2/2;
+                qs->cp[0] = mp-v/2;
+                qs->cp[2] = mp+v/2;
+            }
+            {
+                Vector3<GLfloat> v = ((qs-1)->cp[2]-(qs-1)->cp[0])/2;
+                Point3<GLfloat> mp = (qs-1)->cp[0]+v;
+                Vector3<GLfloat> v2 = mp-(qs-1)->poi;
+                (qs-1)->cp[1] = (qs-1)->poi-v2/2;
+                mp = (qs-1)->poi+v2/2;
+                (qs-1)->cp[0] = mp-v/2;
+                (qs-1)->cp[2] = mp+v/2;
+            }
+            {
+                Vector3<GLfloat> v = ((qs+1)->cp[2]-(qs+1)->cp[0])/2;
+                Point3<GLfloat> mp = (qs+1)->cp[0]+v;
+                Vector3<GLfloat> v2 = mp-(qs+1)->poi;
+                (qs+1)->cp[1] = (qs+1)->poi-v2/2;
+                mp = (qs+1)->poi+v2/2;
+                (qs+1)->cp[0] = mp-v/2;
+                (qs+1)->cp[2] = mp+v/2;
+                }
+            return mergeQuadSegs(quadsegs);*/
         }
         
 
@@ -248,6 +270,37 @@ vector<QuadraticSegment> Path::mergeQuadSegs(vector<QuadraticSegment> quadsegs)
     newQuadSegs.push_back(quadsegs.back());
 
     addedPoints = addedPoints || ap;
+
+
+
+    QuadraticSegment front, front2, back, back2;
+    
+    front.cp[0] = points[0];
+
+    front2.cp[2] = newQuadSegs[0].cp[0];
+    front2.cp[1] = newQuadSegs[0].cp[0]+(newQuadSegs[0].cp[0]-newQuadSegs[0].cp[1]);
+    
+    front.cp[1] = front.cp[0] + (front2.cp[1]-front2.cp[2]);
+        
+    front2.cp[0] = front.cp[1] + (front2.cp[1]-front.cp[1])/2;
+    front.cp[2] = front2.cp[0];
+    
+    back.cp[2] = points.back();
+    
+    back2.cp[0] = newQuadSegs.back().cp[2];
+    back2.cp[1] = newQuadSegs.back().cp[2]+(newQuadSegs.back().cp[2]-newQuadSegs.back().cp[1]);
+    
+    back.cp[1] = back.cp[2] + (back2.cp[1]-back2.cp[0]);
+    
+    back2.cp[2] = back.cp[2] + (back2.cp[1]-back.cp[1])/2;
+    back.cp[0] = back2.cp[2];
+    
+    newQuadSegs.insert(newQuadSegs.begin(), front2);
+    newQuadSegs.insert(newQuadSegs.begin(), front);
+    newQuadSegs.push_back(back2);
+    newQuadSegs.push_back(back);
+
+
     return newQuadSegs;
 
 }
@@ -267,17 +320,39 @@ void Path::draw()
     {
         quadsegs = generatePOIQuadSegs();
         quadsegs = mergeQuadSegs(quadsegs);
+
+        cout << "Length: " << length() << "\t\tCurvature: " << curvature() << endl;
+        cout << "Min distance: " << distance() << endl;
     }
     for(vector<QuadraticSegment>::iterator qs = quadsegs.begin(); qs!=quadsegs.end(); qs++)
     {
         qs->draw(theNurb);
-        glColor3f(0,0,1);
+        /*glColor3f(0,0,1);
         qs->nextPlane().draw();
         glColor3f(1,0,1);
         qs->prevPlane().draw();
         glColor3f(1,1,1);
-        qs->osculatingPlane().draw();
+        qs->osculatingPlane().draw();*/
     }
+/*
+    std::vector<Point3<GLfloat> > controlPoints;
+    std::vector<GLfloat> knots;
+    knots.push_back(0);
+    knots.push_back(0);
+    controlPoints.push_back(quadsegs[0].cp[0]);
+    for(int i = 0; i < quadsegs.size(); i++)
+    {
+        knots.push_back(i);
+        controlPoints.push_back(quadsegs[i].cp[1]);
+    }
+    controlPoints.push_back(quadsegs.back().cp[2]);
+    knots.push_back(knots.back());
+    knots.push_back(knots.back());
+    gluBeginCurve(theNurb);
+    gluNurbsCurve(theNurb, knots.size(), &knots[0], sizeof(Point3<GLfloat>)/sizeof(GLfloat), &controlPoints[0][0], 3, GL_MAP1_VERTEX_3);
+    gluEndCurve(theNurb);
+*/
+    
 
     
 
@@ -299,11 +374,75 @@ void Path::draw()
 
 void Path::d(float d)
 {
-    dd = d;
+    GLfloat deltaD = d-dd;
+    dd+=deltaD;
+    for(int i = 0; i < quadsegs.size(); i++)
+    {
+        quadsegs[i].cp[0]+=Vector3<GLfloat>(0,0,deltaD);
+        quadsegs[i].cp[1]+=Vector3<GLfloat>(0,0,deltaD);
+        quadsegs[i].cp[2]+=Vector3<GLfloat>(0,0,deltaD);
+    }
+    
+    cout << "Min distance: " << distance() << endl;
 }
 
-void Path::m(float m)
+GLfloat Path::curvature() const
 {
-    mm = m;
-    recalcDeBoorPoints();
+    GLfloat curvature = 0;
+    for(vector<QuadraticSegment>::const_iterator iter = quadsegs.begin(); iter != quadsegs.end(); iter++)
+    {
+        curvature = max(iter->curvature(), curvature);
+    }
+    return curvature;
+}
+
+GLfloat Path::length() const
+{
+    GLfloat length = 0;
+    for(vector<QuadraticSegment>::const_iterator iter = quadsegs.begin(); iter != quadsegs.end(); iter++)
+    {
+        length += iter->length();
+    }
+    return length;
+}
+
+int Path::duration() const
+{
+    return quadsegs.size();
+}
+
+GLfloat Path::distance() const 
+{
+    GLfloat distance = numeric_limits<GLfloat>::infinity();
+    for(vector<QuadraticSegment>::const_iterator qs = quadsegs.begin(); qs!=quadsegs.end(); qs++)
+    {
+        for(int i = 0; i <=100; i++)
+        {
+            GLfloat t = i/100.0;
+            Point3<GLfloat> o(0,0,0);
+            
+            Point3<GLfloat> p = qs->evaluate(t);
+            try
+            {
+                GLfloat md = mesh->distance(p);
+                if(md<0)
+                    const_cast<QuadraticSegment &>(*qs).color = Vector3<GLfloat>(1,0,1);
+                distance = min(distance, md);
+            } catch(const char *s) {}
+        }
+    }
+    return distance;
+}
+
+Point3<GLfloat> Path::evaluate(GLfloat time) const
+{
+    int qsnum = int(time);
+    GLfloat residual = time-qsnum;
+    return quadsegs[qsnum].evaluate(residual);
+}
+
+bool Path::segmentHasPOI(GLfloat time) const
+{
+    int qsnum = int(time);
+    return quadsegs[qsnum].hasPoi;
 }

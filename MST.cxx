@@ -84,6 +84,7 @@ vector<Point3<GLfloat> > MST::orderedPoints() const
         }
         pointList.push_back(current_node);
     }
+    
 
     vector<Point3<GLfloat> > retval;
     for(vector<int>::iterator iter = pointList.begin(); iter != pointList.end(); iter++)

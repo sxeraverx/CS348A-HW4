@@ -29,7 +29,7 @@ Function {create_the_forms()} {open
 } {
   Fl_Window assgn1_ui {
     label assgn1_ui open
-    xywh {767 115 870 800} type Double box NO_BOX visible
+    xywh {367 209 870 800} type Double box NO_BOX visible
   } {
     Fl_Box {} {user_data_type long selected
       xywh {0 0 870 800} box UP_BOX labelcolor 56
@@ -48,30 +48,60 @@ Function {create_the_forms()} {open
     }
     Fl_Box canvas {
       user_data 0 user_data_type long
-      xywh {20 20 830 520} box DOWN_BOX labelcolor 56
+      xywh {445 5 420 520} box DOWN_BOX labelcolor 56
       class MainCanvas
     }
     Fl_Box canvas2 {
       user_data 0 user_data_type long
-      xywh {20 560 360 220} box DOWN_BOX labelcolor 56
+      xywh {5 5 435 520} box DOWN_BOX labelcolor 56
       class CameraPositionCanvas
-    }
-    Fl_Value_Slider MSlider {
-      label m
-      user_data 0 user_data_type long
-      callback mCallback
-      xywh {390 560 30 220}
     }
     Fl_Value_Slider DSlider {
       label d
       user_data 0 user_data_type long
       callback dCallback
-      xywh {420 560 30 220}
+      xywh {445 530 30 240}
     }
     Fl_Button {} {
       label Pause
       callback PauseProgram
       xywh {770 740 80 25} box SHADOW_BOX labelfont 1
+    }
+    Fl_Browser POIbrowser {
+      xywh {5 530 435 260} type Select
+    }
+    Fl_Button {} {
+      label Add
+      callback AddPoint
+      xywh {770 715 75 20} box SHADOW_BOX labelfont 1
+    }
+    Fl_Input XInput {
+      label X
+      xywh {490 706 65 24}
+    }
+    Fl_Input ZInput {
+      label Z
+      xywh {665 706 65 24}
+    }
+    Fl_Input YInput {
+      label Y
+      xywh {575 706 65 24}
+    }
+    Fl_Value_Output lengthValue {
+      label {Length:}
+      xywh {605 531 55 24}
+    }
+    Fl_Value_Output segmentsValue {
+      label {Segments:}
+      xywh {605 556 55 24}
+    }
+    Fl_Value_Output curvatureValue {
+      label {Curvature:}
+      xywh {605 581 55 24}
+    }
+    Fl_Value_Output safetyValue {
+      label {Ground Distance:}
+      xywh {605 606 55 24}
     }
   }
 } 

@@ -31,7 +31,7 @@ Triangulator::Triangulator(string filename)
             xs.push_back(x);
             ys.push_back(y);
             zs.push_back(z);
-            points.push_back(Point3<GLfloat>(x/1000.0, y/1000.0, z/1000.0));
+            points.push_back(Point3<GLfloat>(x/10.0, y/10.0, z/10.0));
         }
     }
     
