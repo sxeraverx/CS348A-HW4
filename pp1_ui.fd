@@ -29,7 +29,7 @@ Function {create_the_forms()} {open
 } {
   Fl_Window assgn1_ui {
     label assgn1_ui open
-    xywh {748 229 870 800} type Double box NO_BOX hide
+    xywh {767 115 870 800} type Double box NO_BOX visible
   } {
     Fl_Box {} {user_data_type long selected
       xywh {0 0 870 800} box UP_BOX labelcolor 56
@@ -59,14 +59,19 @@ Function {create_the_forms()} {open
     Fl_Value_Slider MSlider {
       label m
       user_data 0 user_data_type long
-      callback mCallback selected
+      callback mCallback
       xywh {390 560 30 220}
     }
     Fl_Value_Slider DSlider {
       label d
       user_data 0 user_data_type long
-      callback dCallback selected
+      callback dCallback
       xywh {420 560 30 220}
+    }
+    Fl_Button {} {
+      label Pause
+      callback PauseProgram
+      xywh {770 740 80 25} box SHADOW_BOX labelfont 1
     }
   }
 } 

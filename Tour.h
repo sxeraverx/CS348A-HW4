@@ -1,5 +1,4 @@
 #pragma once
-
 #include "Point.h"
 
 #include <string>
@@ -7,6 +6,7 @@
 
 #include <GL/gl.h>
 
+class Datafile;
 class MST;
 class Path;
 
@@ -17,7 +17,7 @@ public:
     Path *path;
     std::vector<Point3<GLfloat> > points;
 public:
-    Tour(std::string filename);
+    Tour(std::string filename, Datafile *mesh);
     ~Tour();
     void draw();
     void m(float m);

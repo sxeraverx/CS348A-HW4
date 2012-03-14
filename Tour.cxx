@@ -1,5 +1,6 @@
 #include "Tour.h"
 
+#include "Datafile.h"
 #include "MST.h"
 #include "Path.h"
 
@@ -8,7 +9,7 @@
 
 using namespace std;
 
-Tour::Tour(string filename)
+Tour::Tour(string filename, Datafile *mesh)
     : points()
 {
     ifstream file(filename.c_str(), ios::in | ios::binary);
@@ -22,7 +23,7 @@ Tour::Tour(string filename)
         points.push_back(Point4<GLfloat>(x/1000.0, y/1000.0, z/1000.0));
     }
     mst = new MST(points);
-    path = new Path(*mst);
+    path = new Path(*mst, mesh);
 }
 
 Tour::~Tour()

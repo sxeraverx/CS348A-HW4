@@ -108,8 +108,8 @@ void MST::draw()
     }*/
     for(vector<Point3<GLfloat> >::iterator iter = points.begin(); iter < points.end()-1; iter++)
     {
-        glVertex3fv(*iter);
-        glVertex3fv(*(iter+1));
+        glVertex3fv(iter->vec);
+        glVertex3fv((iter+1)->vec);
     }
     glEnd();
     glEnable(GL_LIGHTING);

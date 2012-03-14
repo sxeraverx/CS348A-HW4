@@ -1,9 +1,10 @@
 /*********************************************************************************/
-/* Programming Project 2: Sample program to visualize a torus in OpenGL         */
+/* Programming Project 2                                                         */
 /*********************************************************************************/
 
 #include <GL/gl.h>
 #include <GL/glu.h>
+#include <GL/glut.h>
 #include "pp1.h"
 #include "pp1_ui.h"
 #include <math.h>
@@ -33,6 +34,7 @@ using namespace std;
 Fl_Double_Window *ui;
 
 GLdouble viewX, viewY, viewZ;             /* view point */
+GLdouble centerX, centerY, centerZ;             /* view point */
 
 GLUquadricObj *theQuadric;
 GLUnurbsObj *theNurb;
@@ -65,8 +67,26 @@ void DrawScene(){
     tour->draw();
 }
 
+bool paused = false;
+
+void PauseProgram(Fl_Button*, void *)
+{
+    paused = !paused;
+}
+
 void SixtyHzCallback(void *)
 {
+    if(paused)
+        return;
+    static int i = 0;
+    i++;
+    if(i%60==0)
+    {
+        Point3<GLfloat> center = tour->points[(i/60)%tour->points.size()];
+        centerX = center[0];
+        centerY = center[1];
+        centerZ = center[2];
+        }
     Fl::repeat_timeout(1.0/60, SixtyHzCallback);
     double r = sqrt(pow(viewX, 2) + pow(viewY, 2) + pow(viewZ, 2));
     double theta = acos(viewZ/r);
@@ -106,7 +126,7 @@ void InitInterfaceDefaults(void){
 void MyInit(void){
 	theQuadric = gluNewQuadric();
     datafile = new Triangulator("hw4.heights");
-    tour = new Tour("hw4.tour");
+    tour = new Tour("hw4.tour", datafile);
     for(vector<Point3<GLfloat> >::iterator iter = tour->points.begin(); iter!=tour->points.end(); iter++)
     {
         cout << (*iter) << endl;
@@ -120,6 +140,7 @@ void MyInit(void){
 
 void test();
 int main(int argc, char *argv[]){
+    glutInit(&argc, argv);
     test();
 	ui = create_the_forms();
 	Fl::visual(FL_DOUBLE|FL_INDEX);
@@ -141,10 +162,10 @@ int main(int argc, char *argv[]){
 // Define viewpoint of main window
 void DefineViewPointMain(){
 	glLoadIdentity();
-	gluLookAt(
-		viewX, viewY, viewZ,
-		0.0, 0.0, 0.0,
-		0.0, 0.0, 1.0);
+    gluLookAt(
+        centerX+viewX, centerY+viewY, centerZ+viewZ,
+        centerX, centerY, centerZ,
+        0.0, 0.0, 1.0);
 }
 
 // Define viewpoint of the secondary window

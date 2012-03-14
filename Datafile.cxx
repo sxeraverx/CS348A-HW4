@@ -129,6 +129,22 @@ void Datafile::recalculateNormals()
     }
 }
 
+void Datafile::drawTrianglesBelow(vector<Point3<GLfloat> > ps)
+{
+    glBegin(GL_TRIANGLES);
+    Vector3<GLfloat> z(0,0,1);
+    for(vector<Point3<GLfloat> >::iterator iter = ps.begin(); iter!=ps.end(); iter++)
+    {
+        vector<Point3<GLfloat> > tri(triangleBelow(*iter));
+        Vector3<GLfloat> n = (tri[1]-tri[0]).cross(tri[2]-tri[0]);
+        if(n*z<0) n*=-1;
+        glVertex3fv(tri[0].vec);
+        glVertex3fv(tri[1].vec);
+        glVertex3fv(tri[2].vec);
+    }
+    glEnd();
+}
+
 void Datafile::draw()
 {
     glEnableClientState(GL_VERTEX_ARRAY);
@@ -174,10 +190,10 @@ void Datafile::draw()
     */
 }
 
-vector<Point3<GLfloat> > Datafile::triangleBelow(Point3<GLfloat> p)
+vector<Point3<GLfloat> > Datafile::triangleBelow(Point3<GLfloat> p, bool alreadyTried) const
 {
     Point3<GLfloat> pp(p);
-    for(vector<Vector3<GLuint> >::iterator iter = triangles.begin(); iter < triangles.end(); iter++)
+    for(vector<Vector3<GLuint> >::reverse_iterator iter = triangles.rbegin(); iter < triangles.rend(); iter++)
     {
         /*Convert into Point3*/
         Point3<GLfloat> pa(points[(*iter)[0]]);
@@ -187,25 +203,46 @@ vector<Point3<GLfloat> > Datafile::triangleBelow(Point3<GLfloat> p)
         pa[2] = 0;
         pb[2] = 0;
         pc[2] = 0;
+        pp[2] = 0;
         //compute all edges
-        Vector3<GLfloat> A = pb-pa;
-        Vector3<GLfloat> B = pc-pb;
-        Vector3<GLfloat> C = pa-pc;
+        Vector3<GLfloat> B = pb-pa;
+        Vector3<GLfloat> C = pc-pa;
         //compute vector from each vertex
         Vector3<GLfloat> a = pp-pa;
-        Vector3<GLfloat> b = pp-pb;
-        Vector3<GLfloat> c = pp-pc;
 
-        Vector3<GLfloat> z(0,0,1);
-        //if all vectors to point are on the same side of each vertex, the point is inside
-        if(A.cross(a)*z>=0 && B.cross(b)*z>=0 && C.cross(c)*z>=0
-           || A.cross(a)*z<=0 && B.cross(b)*z<=0 && C.cross(c)*z<=0)
+        GLfloat dotCC = C*C;
+        GLfloat dotCB = C*B;
+        GLfloat dotCP = C*a;
+        GLfloat dotBB = B*B;
+        GLfloat dotBP = B*a;
+
+        GLfloat den = (dotCC*dotBB-dotCB*dotCB);
+        GLfloat u = (dotBB*dotCP-dotCB*dotBP);
+        GLfloat v = (dotCC*dotBP-dotCB*dotCP);
+        //cout << dotCC << " " << dotCB << " " << dotCP << " " << dotBB << " " << dotBP << endl;
+        //cout << u << " " << v << " " << u+v << " " << den << endl;
+
+        if (u>=0 && v>=0 && u+v<=den)
         {
             vector<Point3<GLfloat> > pts;
-            pts.push_back(pa);
-            pts.push_back(pb);
-            pts.push_back(pc);
+            pts.push_back(points[(*iter)[0]]);
+            pts.push_back(points[(*iter)[1]]);
+            pts.push_back(points[(*iter)[2]]);
+            int idx = triangles.size()-1-(iter-triangles.rbegin());
+            if(idx<19.0/20.0*triangles.size())
+            {
+                Vector3<GLuint> triangleIndices = *iter;
+                assert(triangleIndices==*(triangles.begin()+idx));
+                triangles.erase(triangles.begin()+idx);
+                triangles.push_back(triangleIndices);
+                return triangleBelow(p, false);
+            }
             return pts;
         }
     }
+    if(!alreadyTried)
+        return triangleBelow(p+Vector3<GLfloat>(1.0e-7,1.0e-7,0), true);
+    vector<Point3<GLfloat> > tri;
+    //cout << p << endl;
+    throw("No triangle found");
 }

@@ -11,17 +11,17 @@ FL_LIBDIR =
 FL_LIBS = -lfltk_gl -lfltk
 
 # Additional libraries needed to link with OpenGL and any platform specific stuff
-GLLIBS = -lGL -lGLU -lX11 -lm -ltriangulation -Lminmaxer/source.triangulation
+GLLIBS = -lGL -lGLU -lglut -lX11 -lm -ltriangulation -Lminmaxer/source.triangulation
 
-CFLAGS= $(FL_INCLUDE) -O0 -ggdb -pg
+CFLAGS= $(FL_INCLUDE) -O3 -ggdb -pg
 
-LFLAGS = -O0 -ggdb -pg
+LFLAGS = -O3 -ggdb -pg
 
 ###############################################################################
 # basic headers and files *.o to be linked together
 ###############################################################################
 HEADBAS= pp1_ui.h pp1.h
-OBJBAS= pp1.o Datafile.o MST.o Path.o Tour.o Triangulator.o Vector.o pp1_ui.o
+OBJBAS= pp1.o Datafile.o MST.o Path.o Plane.o Tour.o Triangulator.o Vector.o pp1_ui.o
 
 ###############################################################################
 # files to be build in default case

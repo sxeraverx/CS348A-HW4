@@ -43,6 +43,10 @@ struct Vector3
     Vector3<T> operator+(const Vector3<T> &v) const { Vector3<T> ret(vec); return ret+=v;}
     Vector3<T> operator-(const Vector3<T> &v) const { Vector3<T> ret(vec); return ret-=v;}
 
+    bool operator==(const Vector3<T> &v) const { return vec[0]==v.vec[0]
+                                                 && vec[1] == v.vec[1]
+                                                 && vec[2] == v.vec[2]; }
+
     Vector3<T> cross(const Vector3<T> &v) const {
         Vector3<T> ret(0,0,0);
         ret[0] = vec[1]*v[2]-v[1]*vec[2];
@@ -76,4 +80,10 @@ template <typename T>
 std::ostream &operator << (std::ostream &out, const Vector3<T> &v)
 {
     out << "V3: " << v.vec[0] << " " << v.vec[1] << " " << v.vec[2];
+}
+
+template <typename T>
+Vector3<T> operator*(T f, const Vector3<T> &v)
+{
+    return v*f;
 }

@@ -21,8 +21,6 @@ struct Point3
                             vec[2] = z; }
     Point3(const T *vec) { std::copy(vec, vec+3, Point3::vec); }
     Point3(const Point4<T> &p);
-    operator T*() { return vec; }
-    operator const T*() const { return vec; }
     Vector3<T> operator-(const Point3<T> &p) const { Vector3<T> ret(vec);
                                                      ret[0]-=p[0];
                                                      ret[1]-=p[1];
@@ -41,6 +39,8 @@ struct Point3
                                                      ret-=v;
                                                      return ret;}
     bool operator==(const Point3<T> &p) const { return (*this-p).magnitude()==0.0f; }
+    T &operator[](int i) { return vec[i]; }
+    const T &operator[](int i) const { return vec[i]; }
 };
 
 template <typename T>
@@ -54,9 +54,9 @@ struct Point4
     Point4(T x, T y, T z, T w) { vec[0] = x; vec[1] = y; vec[2] = z; vec[3] = w; }
     Point4(Point3<T> p) { std::copy(p.vec, p.vec+3, vec); vec[3] = 1; }
     Point4(T *vec) { std::copy(vec, vec+4, Point4::vec); }
-    operator T*() { return vec; }
-    operator const T*() const { return vec; }
     bool operator==(const Point4<T> &other) const {return Point3<T>(*this)==Point3<T>(other); }
+    T &operator[](int i) { return vec[i]; }
+    const T &operator[](int i) const { return vec[i]; }
 };
 
 template <typename T>
